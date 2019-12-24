@@ -11,8 +11,9 @@ def main():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((host, port))
-    print('binded')
+    print('listening for connections')
     sock.listen()
+    print('got connection')
     conn, addr = sock.accept()
 
     cap = getSource()
