@@ -1,7 +1,7 @@
-import socket
-import sys
 import cv2
-import pickle
+import socket
+from io import StringIO
+import numpy as np
 
 def main():
     host = '192.168.1.228'
@@ -9,29 +9,37 @@ def main():
     header = 10
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(host, port)
-    getData(header)
+    sock.connect((host, port))
+    print('connected')
+    getFrames(sock)
     
-    def getData(h_size):
-        full_msg = b''
-        len_msg = 0
-        new_msg = True
+def getFrames(sock):
+    while True:
+        receive(sock)
+
+def receive(sock):
+    length = None
+    ultimate_buffer = ""
+    while True:
+        data = sock.recv(1024)
+        ultimate_buffer += data
+        if len(ultimate_buffer) == length:
+            break
         while True:
-            msg = sock.recv(16)
-            if new_msg == True:
-                print('new msg len: {}'.format(msg[:h_size]))
-                len_msg = int(msg[:h_size])
-                new_msg = False
-            print('full message length: {}'.format(len_msg))
-            print('collecting message')
-            full_msg += msg
-            print(len(full_msg))
-
-            if len(full_msg) - HEADERSIZE == len_msg:
-                print('full message received')
-                frame = pickle.loads(full_msg[h_size:])
-                cv2.imshow(frame)
-                new_msg = True
-                full_msg = b''
+            if length is None:
+                if ':' not in ultimate_buffer:
+                    break
+                length_str, ignored, ultimate_buffer = ultimate_buffer.partition(':')
+                length = int(length_str)
+            if len(ultimate_buffer) < length:
+                break
+            ultimate_buffer = ultimate_buffer[length:]
+            length = None
+            break
+        final_image = np.load(StringIO(ultimate_buffer))['frame']
+        print('received image')
+        return
 
 
+if __name__ == '__main__':
+    main()
