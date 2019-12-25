@@ -1,31 +1,38 @@
 import cv2
 import socket
-from io import StringIO
+from io import BytesIO
 import numpy as np
 
 
 def main():
     host = '192.168.1.228'
     port = 1050
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((host, port))
-    sock.listen()
-    conn, addr = sock.accept()
-    
+    #sock, conn, addr = getConnections(host, port)
     try:
-        sendFrames(sock, conn, addr)
+        sendFrames(sock=None, conn=None)
     except:
         raise
         sock.close()
 
-def sendFrames(sock, conn, addr):
+def getConnections(host, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, port))
+    sock.listen()
+    conn, addr = sock.accept()
+    return sock, conn, addr
+
+def sendFrames(sock, conn):
     cap = getSource()
     while cap != False and cap.isOpened():
         ret, frame = cap.read()
-        if ret == False:
+        bwFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        height, width = bwFrame.shape[:2]
+        resized = cv2.resize(bwFrame, (int(0.5*width), int(0.5*height)))
+        
+        if ret is True:
+            send(conn, resized)
+        else:
             break
-        send(conn, frame)
         #cv2.imshow("frame", frame)
         
         if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -33,14 +40,30 @@ def sendFrames(sock, conn, addr):
     sock.close()
 
 def send(conn, image):
-    f = StringIO()
+    if not isinstance(image, np.ndarray):
+        print('not a valid image')
+        return
+    
+    
+    f = BytesIO()
     np.savez_compressed(f, frame=image)
     f.seek(0)
     out = f.read()
     val = "{0}:".format(len(f.getvalue()))
-    out = val + out
+    out = val.encode() + out
     conn.send(out)
-
+    '''
+    a,b,c = (out.partition(b':'))
+    frame = np.load(BytesIO(c))['frame']
+    cv2.imshow("frame", frame)
+    print(image)
+    data = image.tostring()
+    header = "{}:".format(len(data))
+    data = header.encode() + data
+    a,b,c = data.partition(':'.encode())
+    print(image)
+    #conn.send(out)
+    '''
 
 
 def getSource():
