@@ -7,11 +7,10 @@ import numpy as np
 def main():
     host = '192.168.1.228'
     port = 1050
-    #sock, conn, addr = getConnections(host, port)
+    sock, conn, addr = getConnections(host, port)
     try:
-        sendFrames(sock=None, conn=None)
+        sendFrames(sock, conn)
     except:
-        raise
         sock.close()
 
 def getConnections(host, port):
@@ -27,7 +26,7 @@ def sendFrames(sock, conn):
         ret, frame = cap.read()
         bwFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         height, width = bwFrame.shape[:2]
-        resized = cv2.resize(bwFrame, (int(0.5*width), int(0.5*height)))
+        resized = cv2.resize(bwFrame, (int(0.2*width), int(0.2*height)))
         
         if ret is True:
             send(conn, resized)
@@ -44,27 +43,16 @@ def send(conn, image):
         print('not a valid image')
         return
     
-    
     f = BytesIO()
     np.savez_compressed(f, frame=image)
     f.seek(0)
-    out = f.read()
-    val = "{0}:".format(len(f.getvalue()))
-    out = val.encode() + out
-    conn.send(out)
-    '''
-    a,b,c = (out.partition(b':'))
-    frame = np.load(BytesIO(c))['frame']
-    cv2.imshow("frame", frame)
-    print(image)
-    data = image.tostring()
-    header = "{}:".format(len(data))
-    data = header.encode() + data
-    a,b,c = data.partition(':'.encode())
-    print(image)
-    #conn.send(out)
-    '''
-
+    output = f.read()
+    dataLen = "{0}:".format(len(f.getvalue()))
+    output = dataLen.encode() + output
+    try:
+        conn.send(output)
+    except BrokenPipeError:
+        return
 
 def getSource():
     try:
@@ -77,3 +65,4 @@ def getSource():
 
 if __name__ == '__main__':
     main()
+
