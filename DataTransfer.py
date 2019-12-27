@@ -12,6 +12,7 @@ class DataTransfer:
         self.state = state.lower()
         self.socket = None
         self.scale = 0.2
+        self.transferLimit = 1024
         # setup socket
         if self.state == 'server':
             self.setupServer()
@@ -33,8 +34,8 @@ class DataTransfer:
         return
 
     def sendFrames(self, frame):
-        resizedFrame = self.resizeFrame(frame, self.scale) # resize frame
-        compressedFrame = self.compressData(resized) # convert numpy array to bytes
+        resizedFrame = self.resizeFrame(frame) # resize frame
+        compressedFrame = self.compressData(resizedFrame) # convert numpy array to bytes
         self.conn.send(compressedFrame) # send compressed array
 
     def receiveFrames(self):
@@ -66,6 +67,6 @@ class DataTransfer:
         np.savez_compressed(f, frame=resized)
         f.seek(0)
         compressedFrame = f.read()
-        dataSize = "{0}".format(len(f.getvalue()))
+        dataSize = "{0}:".format(len(f.getvalue()))
         compressedFrame = dataSize.encode() + compressedFrame
         return compressedFrame
