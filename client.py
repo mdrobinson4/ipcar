@@ -2,6 +2,9 @@ import cv2
 import DataTransfer
 
 def main():
+    command = input()
+    print(command)
+    return
     host = 'localhost'
     port = 1050
     state = 'client'
