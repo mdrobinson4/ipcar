@@ -13,6 +13,7 @@ class SendCommands:
         sendThread.start()
         self.getInput()
         sendThread.join()
+        print('done')
 
     def getInput(self):
         self.root.bind("<KeyPress>", self.keydown)
@@ -27,23 +28,29 @@ class SendCommands:
 
     def keydown(self, e):
         key = e.keysym
-        if key.lower() == 'escape':
+        if key not in self.pressed and (key == 'Left' or key == 'Right' or key == 'Up' or key == 'Down'):
+            self.pressed.append(key)
+        elif key.lower() == 'escape':
             self.root.destroy()
             self.pressed = None
-        elif not key in self.pressed and not 'Shift' in key:
-            self.pressed.append(key.lower())
 
     def sendInput(self):
         while self.pressed != None:
-            if len(self.pressed) > 0:
-                #print(self.pressed)
-                str = self.pressed[0]
-                if len(self.pressed) > 1:
-                    str += ':' + self.pressed[1]
-                str.zfill(10)
-                print(str)
-                #self.socket.send(self.pressed)
-        print('quit')
+            pressed = self.pressed
+            try:
+                if len(pressed) > 0:
+                    data = pressed[0]
+                    if len(pressed) > 1:
+                        data += ':' + pressed[1]
+                    data = data.zfill(10).encode()
+                    print(data)
+                    #self.socket.send(data)
+            except IndexError:
+                print('changed')
+                pass
+            except TypeError:
+                break
+
 
 if __name__ == '__main__':
     gui = SendCommands(None)

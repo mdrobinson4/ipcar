@@ -5,19 +5,13 @@ import numpy as np
 import json
 
 class DataTransfer:
-    def __init__(self, host, port, state):
+    def __init__(self, socket, conn, addr):
         # initialize variables
-        self.host = host
-        self.port = port
-        self.state = state.lower()
-        self.socket = None
+        self.socket = socket
+        self.conn = conn
+        self.addr = addr
         self.scale = 0.2
         self.transferLimit = 1024
-        # setup socket
-        if self.state == 'server':
-            self.setupServer()
-        elif self.state == 'client':
-            self.setupClient()
 
     def setupServer(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
