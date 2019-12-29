@@ -1,9 +1,9 @@
 import RPi.GPIO as GPIO          
 from time import sleep
 
-in1 = 24
-in2 = 23
-en = 25
+en = 2
+in1 = 3
+in2 = 4
 temp1=1
 
 GPIO.setmode(GPIO.BCM)
