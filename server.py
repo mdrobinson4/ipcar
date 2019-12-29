@@ -1,40 +1,60 @@
 import cv2
 import DataTransfer
-
+import threading
+import socket
 
 def main():
     host = 'localhost'
     port = 1050
-    state = 'server'
-
     cap = cv2.VideoCapture(0)
-    sendFrames(host, port, cap)
-    sendCommands(host, port)
+    createThreads(host, port, cap)
+    print('exit')
 
-def sendFrames(server, cap):
-    socket, conn, addr = setupServer((host, port))
-    transer = DataTransfer.DataTransfer(socket, conn, addr)
+def createThreads(host, port, cap):
+    frameThread = threading.Thread(target=sendFrames, args=(host, port, cap,))
+    commandThread = threading.Thread(target=getCommands, args=(host, port + 1,))
+    frameThread.start()
+    commandThread.start()
+    frameThread.join()
+    commandThread.join()
+
+def sendFrames(host, port, cap):
+    socket, conn, addr = setupServer(host, port)
+    transfer = DataTransfer.DataTransfer(socket, conn, addr)
     while cap != False and cap.isOpened():
         ret, frame = cap.read()
-        if ret == True:
-            transfer.sendFrames(frame)
-        else:
+        if ret != True:
             break
+        try:
+            transfer.sendFrames(frame)
+        except BrokenPipeError:
+            break
+        except ConnectionAbortedError:
+            break
+    socket.close()
+    cap.release()
+    cv2.destroyAllWindows()
 
-def sendCommands(host, port):
-    socket, conn, addr = setupServer((host, port+1))
+def getCommands(host, port):
+    socket, conn, addr = setupServer(host, port)
+    data = ''
     while True:
-        data = sock.recv(10)
+        data = conn.recv(10)
         data = data.decode()
         data = data.replace('0', '')
+        if 'close' in data:
+            break
         comm1, _, comm2 = data.partition(':')
+        if len(data) > 0:
+            print('{} - {}'.format(comm1, comm2))
+    socket.close()
 
-def setupServer(locaion):
-    socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket.bind(location)
-    socket.listen()
-    conn, addr = socket.accept()
-    return socket, conn, addr
+def setupServer(host, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, port))
+    sock.listen()
+    conn, addr = sock.accept()
+    return sock, conn, addr
 
 
 if __name__ == '__main__':

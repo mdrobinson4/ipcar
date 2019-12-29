@@ -1,38 +1,39 @@
 import tkinter as tk
 import threading
 
-class SendCommands:
+class Commands:
     def __init__(self, socket):
         self.pressed = []
         self.socket = socket
         self.root = tk.Tk()
         self.setup()
+        print('done')
 
     def setup(self):
         sendThread = threading.Thread(target=self.sendInput)
         sendThread.start()
         self.getInput()
         sendThread.join()
-        print('done')
 
     def getInput(self):
-        self.root.bind("<KeyPress>", self.keydown)
-        self.root.bind("<KeyRelease>", self.keyup)
-        self.root.focus_set()
-        self.root.withdraw()
+        self.frame = tk.Frame(self.root, width=200, height=200)
+        self.frame.bind("<KeyPress>", self.keydown)
+        self.frame.bind("<KeyRelease>", self.keyup)
+        self.frame.pack()
+        self.frame.focus_set()
         self.root.mainloop()
 
     def keyup(self, e):
-        if  e.keysym in self.pressed :
+        if e.keysym.lower() == 'escape':
+            self.pressed = None
+            self.root.destroy()
+        elif e.keysym in self.pressed :
             self.pressed.pop(self.pressed.index(e.keysym))
 
     def keydown(self, e):
         key = e.keysym
         if key not in self.pressed and (key == 'Left' or key == 'Right' or key == 'Up' or key == 'Down'):
             self.pressed.append(key)
-        elif key.lower() == 'escape':
-            self.root.destroy()
-            self.pressed = None
 
     def sendInput(self):
         while self.pressed != None:
@@ -43,14 +44,18 @@ class SendCommands:
                     if len(pressed) > 1:
                         data += ':' + pressed[1]
                     data = data.zfill(10).encode()
+                    if self.socket != None:
+                        self.socket.send(data)
                     print(data)
-                    #self.socket.send(data)
+                else:
+                    if self.socket != None:
+                        self.socket.send('0'.zfill(10).encode())
             except IndexError:
-                print('changed')
                 pass
             except TypeError:
                 break
-
-
-if __name__ == '__main__':
-    gui = SendCommands(None)
+        data = 'close'.zfill(10).encode()
+        #print(data)
+        if self.socket != None:
+            self.socket.send(data) # close socket
+        print('exit')

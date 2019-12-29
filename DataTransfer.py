@@ -10,7 +10,7 @@ class DataTransfer:
         self.socket = socket
         self.conn = conn
         self.addr = addr
-        self.scale = 0.2
+        self.scale = 1
         self.transferLimit = 1024
 
     def setupServer(self):
