@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+import re
 
 class Commands:
     def __init__(self, socket):
@@ -32,30 +33,39 @@ class Commands:
 
     def keydown(self, e):
         key = e.keysym
-        if key not in self.pressed and (key == 'Left' or key == 'Right' or key == 'Up' or key == 'Down'):
+        if key not in self.pressed: #and (key == 'Left' or key == 'Right' or key == 'Up' or key == 'Down'):
             self.pressed.append(key)
 
     def sendInput(self):
+        prev = []
         while self.pressed != None:
             pressed = self.pressed
             try:
                 if len(pressed) > 0:
-                    data = pressed[0]
-                    if len(pressed) > 1:
-                        data += ':' + pressed[1]
-                    data = data.zfill(10).encode()
+                    data = ':'
+                    for i in range(len(pressed)):
+                        data += pressed[i] + ':'
+                    data = data.zfill(15).encode()
                     if self.socket != None:
                         self.socket.send(data)
                     print(data)
+                    #print(re.findall("(?<=\:)(.*?)(?=\:)", data.decode()))
+                '''
                 else:
                     if self.socket != None:
-                        self.socket.send('0'.zfill(10).encode())
+                        self.socket.send(':-:'.zfill(15).encode())
+                '''
             except IndexError:
                 pass
             except TypeError:
                 break
-        data = 'close'.zfill(10).encode()
+        data = ':close:'.zfill(15).encode()
         #print(data)
         if self.socket != None:
             self.socket.send(data) # close socket
         print('exit')
+
+'''
+if __name__ == '__main__':
+    c = Commands(None)
+'''

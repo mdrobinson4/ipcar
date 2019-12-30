@@ -2,7 +2,6 @@ import cv2
 import socket
 from io import BytesIO
 import numpy as np
-import json
 
 class DataTransfer:
     def __init__(self, socket, conn, addr):

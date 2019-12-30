@@ -2,6 +2,7 @@ import cv2
 import DataTransfer
 import threading
 import socket
+import re
 
 def main():
     host = 'localhost'
@@ -38,15 +39,16 @@ def sendFrames(host, port, cap):
 def getCommands(host, port):
     socket, conn, addr = setupServer(host, port)
     data = ''
+    prevComm = []
     while True:
-        data = conn.recv(10)
+        data = conn.recv(15)
         data = data.decode()
-        data = data.replace('0', '')
         if 'close' in data:
             break
-        comm1, _, comm2 = data.partition(':')
-        if len(data) > 0:
-            print('{} - {}'.format(comm1, comm2))
+        comm = re.findall("(?<=\:)(.*?)(?=\:)", data)
+        if len(comm) > 0 and comm != prevComm:
+            print('{}'.format(comm))
+        prevComm = comm
     socket.close()
 
 def setupServer(host, port):
