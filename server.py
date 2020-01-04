@@ -5,6 +5,7 @@ import socket
 import re
 
 def main():
+    GPIO.setmode(GPIO.BCM)
     host = 'localhost'
     port = 1050
     cap = cv2.VideoCapture(0)
@@ -57,6 +58,13 @@ def setupServer(host, port):
     sock.listen()
     conn, addr = sock.accept()
     return sock, conn, addr
+
+def setupMotor(input1, input2):
+    GPIO.setup(input1, GPIO.OUT)
+    GPIO.setup(input2, GPIO.OUT)
+    pwm1 = GPIO.PWM(input1, 1000)
+    pwm1.start
+
 
 
 if __name__ == '__main__':
