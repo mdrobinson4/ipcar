@@ -48,8 +48,6 @@ class Commands:
                     data = data.zfill(15).encode()
                     if self.socket != None:
                         self.socket.send(data)
-                    print(data)
-                    #print(re.findall("(?<=\:)(.*?)(?=\:)", data.decode()))
                 elif len(self.pressed) == 0:
                     data = (':-:'.zfill(15)).encode()
                     if self.socket != None:
@@ -59,7 +57,6 @@ class Commands:
             except TypeError:
                 break
         data = ':close:'.zfill(15).encode()
-        #print(data)
         if self.socket != None:
             self.socket.send(data) # close socket
         print('exit')
