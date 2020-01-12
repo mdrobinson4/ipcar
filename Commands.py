@@ -50,11 +50,10 @@ class Commands:
                         self.socket.send(data)
                     print(data)
                     #print(re.findall("(?<=\:)(.*?)(?=\:)", data.decode()))
-                '''
-                else:
+                elif len(self.pressed) == 0:
+                    data = (':-:'.zfill(15)).encode()
                     if self.socket != None:
-                        self.socket.send(':-:'.zfill(15).encode())
-                '''
+                        self.socket.send(data)
             except IndexError:
                 pass
             except TypeError:
