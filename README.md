@@ -1,4 +1,4 @@
-# ipcar
+# Socket (v1)
 
 Allows users to controll RC car over the internet
 
