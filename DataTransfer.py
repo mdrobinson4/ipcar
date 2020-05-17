@@ -2,30 +2,19 @@ import cv2
 import socket
 from io import BytesIO
 import numpy as np
-from dotenv import load_dotenv
 import os
 
 class DataTransfer:
-    def __init__(self, socket, conn, addr, port, protocol):
+    def __init__(self, socket, clientAddr, port, protocol):
         # initialize variables
         self.protocol = protocol
         self.socket = socket
-        self.conn = conn
-        self.addr = addr
-        self.port = port
-        self.scale = 1
-        if protocol == 'tcp':
-            self.transferLimit = 1024
-        elif protocol == 'udp':
-            self.transferLimit = 65507
-        self.clientAddr = None
-        #project_folder = os.path.expanduser('~/ipcar')  # adjust as appropriate
-        load_dotenv()
+        self.scale = 1/2
+        self.transferLimit = 65507
+        self.client = (clientAddr, port)
 
 
     def sendFrames(self, frame):
-        if self.clientAddr == None:
-            self.clientAddr = (os.getenv('clientHost'), self.port)
         resizedFrame = self.resizeFrame(frame) # resize frame
         compressedFrame = self.compressData(resizedFrame) # convert numpy array to bytes
         if self.protocol == 'tcp':
@@ -41,7 +30,7 @@ class DataTransfer:
                     bytesToSend = bytesRem
                 # split the array into chunks to send
                 data = compressedFrame[bytesSent : bytesSent + bytesToSend]
-                self.socket.sendto(data, self.clientAddr)
+                self.socket.sendto(data, self.client)
                 # update the number of bytes that have been sent
                 bytesSent += bytesToSend
                 # update the amount of data left
@@ -52,26 +41,23 @@ class DataTransfer:
         buffer = b''
         bytesToRec = 0
         image = np.zeros((480,640,3), np.uint8)
-        data, address = self.socket.recvfrom(self.transferLimit)
-        if dataLen == None:
-            dataLen, temp, buffer = data.partition(b':')
-            try:
-                dataLen = int(dataLen)
-            except ValueError:
-                return image
-
-        while len(buffer) < dataLen:
-            dataRem = dataLen - len(buffer)
-            bytesToRec = self.transferLimit
-            if dataRem < self.transferLimit:
-                bytesToRec = dataRem
-            try:
-                (bufferRec, address) = self.socket.recvfrom(bytesToRec)
-            except:
-                return np.zeros((480,640,3), np.uint8)
-            buffer += bufferRec
+        data, address = self.socket.recvfrom(self.transferLimit)        
         try:
+            dataLen, temp, buffer = data.partition(b':')
+            dataLen = int(dataLen)
+        except:
+            return image
+        try:
+            while len(buffer) < dataLen:
+                dataRem = dataLen - len(buffer)
+                bytesToRec = self.transferLimit
+                if dataRem < self.transferLimit:
+                    bytesToRec = dataRem
+                (bufferRec, address) = self.socket.recvfrom(bytesToRec)
+                buffer += bufferRec
             image = np.load(BytesIO(buffer))['frame']
+        except AttributeError:
+            return np.zeros((480,640,3), np.uint8)
         except:
             return np.zeros((480,640,3), np.uint8)
         return image
@@ -91,3 +77,4 @@ class DataTransfer:
         dataSize = "{0}:".format(len(f.getvalue()))
         compressedFrame = dataSize.encode() + compressedFrame
         return compressedFrame
+
