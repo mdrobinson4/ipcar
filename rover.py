@@ -37,20 +37,21 @@ def createThreads(IP, PORT, cap):
     frameThread.start()
     # begin receiving commands
     commandThread.start()
-    controlMotor()
     powerThread.join()
     frameThread.join()
     commandThread.join()
-    
+'''
 def controlMotor():
     global motorCommand
     global exitThread
     motor = [None, None]
-    motor[0] = MotorControl.Motor(17, 0.001265, 0.002)
-    motor[1] = MotorControl.Motor(18, 0.001265, 0.002)
+    motor[0] = MotorControl.Motor(17)
+    motor[1] = MotorControl.Motor(18)
     while exitThread != True:
+        print(motorCommand)
         m0 = motor[0].drive(motorCommand[0])
-        m1 = motor[1].drive(round(motorCommand[1],6))
+        m1 = motor[1].drive(motorCommand[1])
+'''
 
 ''' stream video from the rover to the controller '''
 def sendFrames(host, port, cap, protocol):
@@ -83,6 +84,9 @@ def sendFrames(host, port, cap, protocol):
 def getCommands(host, port, protocol):
     global exitThread
     global motorCommand
+    motor = [None, None]
+    motor[0] = MotorControl.Motor(17)
+    motor[1] = MotorControl.Motor(18)
     connected = False
     # setup tcp socket to receive commands from
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -99,7 +103,16 @@ def getCommands(host, port, protocol):
         
     while exitThread != True:
         data = sock.recv(26)
+        # decode data sent from controller
         motorCommand = pickle.loads(data)
+        # send command to the left motor
+        m0 = motor[0].drive(motorCommand[0])
+        # semd command to the right motor
+        m1 = motor[1].drive(motorCommand[1])
+        print((m0, m1))
+    # stop both motors
+    motor[0].stop()
+    motor[1].stop()
         
     if connected:
         sock.close()

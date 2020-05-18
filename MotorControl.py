@@ -1,48 +1,26 @@
 import RPi.GPIO as GPIO
 import time
 import threading
+import pigpio
 
 
 ''' class to control individual motors '''
 class Motor:
-    def __init__(self, pin, pwmIdle, pwMax):
+    def __init__(self, pin):
         self.exitThread = False
         self.pin = pin # signal gpio pin
-        self.pwRange = (0, pwMax-pwmIdle) # motor pulse width range (seconds)
-        self.inputRange = (0, 10) # minimum input value
-        self.pwIdle = pwmIdle
-        self.pw = pwmIdle
-        # run pulse width modulation in the background
-        t1 = threading.Thread(target=self.run, args=())
-        t1.start()
-    
-    def run(self):
-        GPIO.setmode(GPIO.BCM) # set the rpi pin mode
-        GPIO.setup(self.pin, GPIO.OUT) # set the motor signal pin as output
-        # continue running pwm till end of program
-        while self.exitThread != True:
-            # throttle the signal based on the pulse widths
-            GPIO.output(self.pin, GPIO.HIGH)
-            time.sleep(self.pw)
-            GPIO.output(self.pin, GPIO.LOW)
-        print('stopping motor')
-            
-    ''' convert the speed range (0, 10) to the pulse width range (pwMin, pwMax) '''
-    def mapRange(self, value):
-        num = (value - self.inputRange[0]) * (self.pwRange[1]- self.pwRange[0])
-        denom = self.inputRange[1] - self.inputRange[0]
-        t = self.pwRange[0] + (num / denom)
-        return t
+        self.motor = pigpio.pi()
+        self.motor.set_servo_pulsewidth(pin, 1500)
         
     ''' control the motor '''
-    def drive(self, value):
-        value = float(value)
-        if value > 10 or value < -10:
+    def drive(self, pulseWidth):
+        pulseWidth = float(pulseWidth)
+        if pulseWidth > 2000 or pulseWidth < 1000:
             return False
-        self.pw = self.pwIdle + self.mapRange(value)
-        return self.pw
+        self.motor.set_servo_pulsewidth(self.pin, pulseWidth) 
+        return True
     
     ''' set the pulse width to idle '''
     def stop(self):
-        self.pw = self.pwIdle
+        self.motor.set_servo_pulsewidth(self.pin, 1500)
         self.exitThread = True
