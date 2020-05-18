@@ -1,5 +1,7 @@
 import cv2
+import pickle
 import DataTransfer
+import XboxController
 import threading
 import socket
 from sys import exit
@@ -61,13 +63,17 @@ def sendCommands(host, port, protocol):
     # listen for potential connections
     sock.listen()
     # wait for the rover to connect
+    print('0')
+    conn, addr = sock.accept()
+    # xbox controller
+    xbox = XboxController.XboxController()
+    # read inputs from xbox one controller
     while exitThread != True:
-        try:
-            conn, addr = sock.accept()
-        except socket.timeout:
-            pass
-    else:
-        return      
+        (l, r) = xbox.readController()
+        command = [l, r]
+        dataToSend = pickle.dumps(command)
+        conn.send(dataToSend)
+        print(len(dataToSend))
     # close the socket
     conn.close()
 

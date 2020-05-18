@@ -1,4 +1,5 @@
 import cv2
+import pickle
 import DataTransfer
 import threading
 import socket
@@ -11,6 +12,7 @@ exitThread = None
 
 def main():
     # rover and controller ip address
+    #IP = {'rover': '192.168.2.8', 'controller': '192.168.2.6'}
     IP = {'rover': 'localhost', 'controller': 'localhost'}
     # frame and command transfer port numbers
     PORT = {'frame': 1050, 'command': 1051}
@@ -81,6 +83,12 @@ def getCommands(host, port, protocol):
         except KeyboardInterrupt:
             exitThread = True
             return
+        
+    while exitThread != True:
+        data = sock.recv(26)
+        command = pickle.loads(data)
+        print(command)
+        
     if connected:
         sock.close()
 
