@@ -46,18 +46,3 @@ class Motor:
     def stop(self):
         self.pw = self.pwIdle
         self.exitThread = True
-
-'''
-if __name__ == "__main__":
-    motor = Motor(18, 0.0014, 0.002)
-    try:
-        while True:
-            val = input()
-            resp = motor.drive(val)
-            print(resp)
-    except KeyboardInterrupt:
-        resp = motor.drive(0)
-        print(resp)
-        motor.stop()
-'''         
-

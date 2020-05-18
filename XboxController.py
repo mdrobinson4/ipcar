@@ -62,12 +62,3 @@ class XboxController(object):
         left = k * (self.joystick[1] + self.joystick[0])
         right = k * (self.joystick[1] - self.joystick[0])
         return (left, right)
-
-'''
-if __name__ == "__main__":
-    xbox = XboxController()
-    while True:
-        (left, right) = xbox.readController()
-        print((left, right))
-'''
-    

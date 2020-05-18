@@ -51,8 +51,6 @@ def controlMotor():
     while exitThread != True:
         m0 = motor[0].drive(motorCommand[0])
         m1 = motor[1].drive(round(motorCommand[1],6))
-        print(m1)
-        #prevCommand = motorCommand.copy()
 
 ''' stream video from the rover to the controller '''
 def sendFrames(host, port, cap, protocol):
