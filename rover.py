@@ -46,12 +46,13 @@ def controlMotor():
     global motorCommand
     global exitThread
     motor = [None, None]
-    motor[0] = MotorControl.Motor(17, 0.0015, 0.002)
-    motor[1] = MotorControl.Motor(18, 0.0015, 0.002)
+    motor[0] = MotorControl.Motor(17, 0.001265, 0.002)
+    motor[1] = MotorControl.Motor(18, 0.001265, 0.002)
     while exitThread != True:
         m0 = motor[0].drive(motorCommand[0])
-        m1 = motor[1].drive(motorCommand[1])
+        m1 = motor[1].drive(round(motorCommand[1],6))
         print(m1)
+        #prevCommand = motorCommand.copy()
 
 ''' stream video from the rover to the controller '''
 def sendFrames(host, port, cap, protocol):
