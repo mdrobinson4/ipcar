@@ -1,14 +1,15 @@
 import cv2
 import pickle
 import DataTransfer
+import MotorControl
 import threading
 import socket
 import re
 from sys import exit
 import RPi.GPIO as GPIO
-import motorControl
 
 exitThread = None
+motorCommand = [0, 0]
 
 def main():
     # rover and controller ip address
@@ -36,9 +37,21 @@ def createThreads(IP, PORT, cap):
     frameThread.start()
     # begin receiving commands
     commandThread.start()
+    controlMotor()
     powerThread.join()
     frameThread.join()
     commandThread.join()
+    
+def controlMotor():
+    global motorCommand
+    global exitThread
+    motor = [None, None]
+    motor[0] = MotorControl.Motor(17, 0.0015, 0.002)
+    motor[1] = MotorControl.Motor(18, 0.0015, 0.002)
+    while exitThread != True:
+        m0 = motor[0].drive(motorCommand[0])
+        m1 = motor[1].drive(motorCommand[1])
+        print(m1)
 
 ''' stream video from the rover to the controller '''
 def sendFrames(host, port, cap, protocol):
@@ -70,6 +83,7 @@ def sendFrames(host, port, cap, protocol):
 ''' receive commands from the controller '''
 def getCommands(host, port, protocol):
     global exitThread
+    global motorCommand
     connected = False
     # setup tcp socket to receive commands from
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -86,8 +100,7 @@ def getCommands(host, port, protocol):
         
     while exitThread != True:
         data = sock.recv(26)
-        command = pickle.loads(data)
-        print(command)
+        motorCommand = pickle.loads(data)
         
     if connected:
         sock.close()

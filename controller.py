@@ -63,17 +63,19 @@ def sendCommands(host, port, protocol):
     # listen for potential connections
     sock.listen()
     # wait for the rover to connect
-    print('0')
     conn, addr = sock.accept()
     # xbox controller
     xbox = XboxController.XboxController()
     # read inputs from xbox one controller
     while exitThread != True:
+        # get input from the xbox controller
         (l, r) = xbox.readController()
+        # command to send to rover
         command = [l, r]
+        # serialize data
         dataToSend = pickle.dumps(command)
+        # send data to rover
         conn.send(dataToSend)
-        print(len(dataToSend))
     # close the socket
     conn.close()
 

@@ -23,7 +23,6 @@ class Motor:
         while self.exitThread != True:
             # throttle the signal based on the pulse widths
             GPIO.output(self.pin, GPIO.HIGH)
-            print(self.pw)
             time.sleep(self.pw)
             GPIO.output(self.pin, GPIO.LOW)
         print('stopping motor')
@@ -35,37 +34,30 @@ class Motor:
         t = self.pwRange[0] + (num / denom)
         return t
         
-    ''' move the motor forward '''
-    def forward(self, value):
+    ''' control the motor '''
+    def drive(self, value):
         value = float(value)
-        if value > 10 or value < 0:
+        if value > 10 or value < -10:
             return False
         self.pw = self.pwIdle + self.mapRange(value)
         return self.pw
     
-    ''' move the motor backwards '''
-    def reverse(self, value):
-        value = float(value)
-        if value > 10 or value < 0:
-            return False
-        self.pw = self.pwIdle - self.mapRange(value)
-        return self.pw
-    
+    ''' set the pulse width to idle '''
     def stop(self):
         self.pw = self.pwIdle
         self.exitThread = True
 
-
+'''
 if __name__ == "__main__":
-    motor = Motor(18, 0.0015, 0.002)
+    motor = Motor(18, 0.0014, 0.002)
     try:
         while True:
             val = input()
-            resp = motor.forward(val)
+            resp = motor.drive(val)
             print(resp)
     except KeyboardInterrupt:
-        resp = motor.forward(0)
+        resp = motor.drive(0)
         print(resp)
         motor.stop()
-            
+'''         
 
