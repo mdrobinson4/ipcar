@@ -120,7 +120,7 @@ def getCommands(host, port, protocol):
     # stop both motors
     motor[0].stop()
     motor[1].stop()
-        
+    
     if sock:
         sock.close()
 
@@ -131,7 +131,6 @@ def power():
         c = input()
         if c == 'q':
             exitThread = True
-
-
+            
 if __name__ == '__main__':
     main()
