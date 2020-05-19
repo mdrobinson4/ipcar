@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 import inputs
-
 
 class XboxController(object):
     def __init__(self):
@@ -19,28 +17,26 @@ class XboxController(object):
         for event in events:
             # joystick y-axis
             if event.code == 'ABS_Y':
-                # adjust the range of values to -10 to 10
+                # adjust the range of values to -100 to 100
                 self.joystick[1] = self.mapRange(event.state,'y',(-100,100))
             # joystick x-axis
             elif event.code == 'ABS_X':
-                # print(event.state)
-                # adjust the range of values to -10 to 10
+                # adjust the range of values to -100 to 100
                 self.joystick[0] = self.mapRange(event.state, 'x',(-100,100))
-        # print((self.joystick[0], self.joystick[1]))
         # mix the controls for the x and y-axis
         return self.mixControls()
     
     ''' change the range of values to -10 to 10 '''
     def mapRange(self, input, axis, mapTo):
         mapFrom = None
-        # desired range
-        # compensate for slightly differnt x and y-axis ranges
+        # default range to map from
         mapFrom = (-100, 100)
+        # compensate for different x and y-axis ranges
         if axis == 'x':
             mapFrom = self.xRange
         elif axis == 'y':
             mapFrom = self.yRange
-        # math stuff
+        # compute translation
         num = (input - mapFrom[0]) * (mapTo[1]- mapTo[0])
         denom = mapFrom[1] - mapFrom[0]
         t = mapTo[0] + (num / denom)
@@ -52,18 +48,14 @@ class XboxController(object):
         k = 1 # scale
         left = None
         right = None
+        # assign corresponding axis values
         x = self.joystick[0]
         y = self.joystick[1]
+        # intermediate step for mixing controls
         v = (100-abs(x))*(y/100)+y
         w = (100-abs(y))*(x/100)+x
+        # assign corresponding left and right motor commands
+        # and map range from -100->100 to 1000->2000 (pulsewidth range)
         right = self.mapRange((v-w)/2,None,(1000,2000))
         left = self.mapRange((v+w)/2,None,(1000,2000))
-        #print((left, right))
         return (left, right)
-
-'''
-if __name__ == '__main__':
-    xbox = XboxController()
-    while True:
-        xbox.readController()
-'''

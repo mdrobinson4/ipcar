@@ -1,4 +1,6 @@
 import cv2
+import inputs
+import importlib
 import pickle
 import DataTransfer
 import XboxController
@@ -58,24 +60,49 @@ def sendCommands(host, port, protocol):
     addr = None
     # setup tcp socket to send commands to control rover
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # bind socket to controller
     sock.bind((host, port))
     # listen for potential connections
     sock.listen()
     # wait for the rover to connect
+    print(1)
     conn, addr = sock.accept()
+    print(2)
     # xbox controller
     xbox = XboxController.XboxController()
     # read inputs from xbox one controller
     while exitThread != True:
-        # get input from the xbox controller
-        (l, r) = xbox.readController()
-        # command to send to rover
-        command = [l, r]
-        # serialize data
-        dataToSend = pickle.dumps(command)
-        # send data to rover
-        conn.send(dataToSend)
+        try:
+            # get input from the xbox controller
+            (l,r) = xbox.readController()
+            # command to send to rover
+            command = [l,r]
+            print(command)
+            # serialize data
+            dataToSend = pickle.dumps(command)
+        except (inputs.UnpluggedError, OSError):
+            # reload inputs
+            importlib.reload(inputs)
+            print('xbox controller unplugged')
+            dataToSend = pickle.dumps([1500,1500])
+            # send data to rover
+        try:
+            conn.send(dataToSend)
+            print('sent')
+        except (ConnectionResetError, OSError):
+            print('connection to rover lost')
+            # listen for potential connections
+            sock.listen()
+            # wait for the rover to connect
+            conn, addr = sock.accept()
+
+            
+        #except OSError:
+            #print('oserror')
+            #pass
+        except KeyboardInterrupt:
+            conn.close()
     # close the socket
     conn.close()
 

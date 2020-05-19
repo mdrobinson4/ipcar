@@ -30,28 +30,16 @@ def createThreads(IP, PORT, cap):
     frameThread = threading.Thread(target=sendFrames, args=(IP['controller'], PORT['frame'], cap, 'udp',))
     # receive controls from controller
     commandThread = threading.Thread(target=getCommands, args=(IP['controller'], PORT['command'], 'tcp',))
+    # listen for inputs from user to quit
     powerThread = threading.Thread(target=power, args=())
-    # begin waiting for input
+    # begin processes
     powerThread.start()
-    # begin streaming video
     frameThread.start()
-    # begin receiving commands
     commandThread.start()
+    # wait till all processes to end before continuing
     powerThread.join()
     frameThread.join()
     commandThread.join()
-'''
-def controlMotor():
-    global motorCommand
-    global exitThread
-    motor = [None, None]
-    motor[0] = MotorControl.Motor(17)
-    motor[1] = MotorControl.Motor(18)
-    while exitThread != True:
-        print(motorCommand)
-        m0 = motor[0].drive(motorCommand[0])
-        m1 = motor[1].drive(motorCommand[1])
-'''
 
 ''' stream video from the rover to the controller '''
 def sendFrames(host, port, cap, protocol):
@@ -80,41 +68,60 @@ def sendFrames(host, port, cap, protocol):
     cap.release()
     cv2.destroyAllWindows()
 
-''' receive commands from the controller '''
-def getCommands(host, port, protocol):
+def connectTCP(sock, host, port):
     global exitThread
-    global motorCommand
-    motor = [None, None]
-    motor[0] = MotorControl.Motor(17)
-    motor[1] = MotorControl.Motor(18)
     connected = False
-    # setup tcp socket to receive commands from
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # connect to the controller
     while connected == False and exitThread != True:
+        print('here')
         connected = True
         try:
             sock.connect((host, port))
-        except ConnectionRefusedError:
+        except (OSError, ConnectionRefusedError):
             connected = False
         except KeyboardInterrupt:
             exitThread = True
             return
+    return sock
+
+''' receive commands from the controller and send to motors '''
+def getCommands(host, port, protocol):
+    global exitThread
+    motorCommand = None
+    motor = [None, None]
+    motor[0] = MotorControl.Motor(17)
+    motor[1] = MotorControl.Motor(18)
+    # setup tcp socket to receive commands from
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # connect to the controller
+    sock = connectTCP(sock, host, port)
         
     while exitThread != True:
         data = sock.recv(26)
-        # decode data sent from controller
-        motorCommand = pickle.loads(data)
+        try:
+            # decode data sent from controller
+            motorCommand = pickle.loads(data)
+            print(motorCommand)
+        #except EOFError:
+            #sock = connectTCP(sock, host, port)  
         # send command to the left motor
-        m0 = motor[0].drive(motorCommand[0])
-        # semd command to the right motor
-        m1 = motor[1].drive(motorCommand[1])
-        print((m0, m1))
+            m0 = motor[0].drive(motorCommand[0])
+            # send command to the right motor
+            m1 = motor[1].drive(motorCommand[1])
+        except EOFError:
+            print('lost controller connection')
+            motor[0].stop()
+            motor[1].stop()
+            sock.close()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = connectTCP(sock, host, port)
+            pass
+        
     # stop both motors
     motor[0].stop()
     motor[1].stop()
         
-    if connected:
+    if sock:
         sock.close()
 
 ''' causes all processes to end if 'q' is inputted into terminal '''
