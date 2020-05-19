@@ -6,10 +6,14 @@ import threading
 import socket
 import re
 from sys import exit
+import time
+import warnings
 import RPi.GPIO as GPIO
 
 exitThread = None
 motorCommand = [0, 0]
+
+
 
 def main():
     # rover and controller ip address
@@ -49,18 +53,18 @@ def sendFrames(host, port, cap, protocol):
     # setup video streaming class
     transfer = DataTransfer.DataTransfer(sock, host, port, protocol)
     # send video to the controller
-    try:
-        while cap != False and cap.isOpened() and exitThread != True:
-            ret, frame = cap.read()
-            if ret == True:
+    while exitThread != True:
+        ret, frame = cap.read()
+        if ret == True:
+            try:
                 # send the frame to the controller
                 transfer.sendFrames(frame)
-    except KeyboardInterrupt:
-        print('keyboard interrupt')
-    except BrokenPipeError:
-        print('broken pipe')
-    except ConnectionAbortedError:
-        print('connection aborted')
+            except KeyboardInterrupt:
+                print('keyboard interrupt')
+            except BrokenPipeError:
+                print('broken pipe')
+            except ConnectionAbortedError:
+                print('connection aborted')
         
     # stop all threads and clean everything up
     exitThread = True
@@ -68,12 +72,13 @@ def sendFrames(host, port, cap, protocol):
     cap.release()
     cv2.destroyAllWindows()
 
+''' attempt to create tcp connection '''
 def connectTCP(sock, host, port):
     global exitThread
     connected = False
     # connect to the controller
     while connected == False and exitThread != True:
-        print('here')
+        #print('here')
         connected = True
         try:
             sock.connect((host, port))
@@ -89,6 +94,7 @@ def getCommands(host, port, protocol):
     global exitThread
     motorCommand = None
     motor = [None, None]
+    # setup motors
     motor[0] = MotorControl.Motor(17)
     motor[1] = MotorControl.Motor(18)
     # setup tcp socket to receive commands from
@@ -97,26 +103,26 @@ def getCommands(host, port, protocol):
     sock = connectTCP(sock, host, port)
         
     while exitThread != True:
+        # receive command from controller
         data = sock.recv(26)
         try:
             # decode data sent from controller
             motorCommand = pickle.loads(data)
             print(motorCommand)
-        #except EOFError:
-            #sock = connectTCP(sock, host, port)  
-        # send command to the left motor
+            # send command to the left motor
             m0 = motor[0].drive(motorCommand[0])
             # send command to the right motor
             m1 = motor[1].drive(motorCommand[1])
         except EOFError:
             print('lost controller connection')
+            # set motors to idle
             motor[0].stop()
             motor[1].stop()
+            # attempt to reconnect to controller
             sock.close()
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock = connectTCP(sock, host, port)
             pass
-        
     # stop both motors
     motor[0].stop()
     motor[1].stop()

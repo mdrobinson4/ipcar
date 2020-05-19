@@ -39,36 +39,54 @@ def getFrames(host, port, protocol):
     global exitThread
     # setup udp socket to receive video from rover
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(1)
     sock.bind((host, port))
     # create transfer class to receive video
     transfer = DataTransfer.DataTransfer(sock, None, None, 'udp')
-    try:
-        while exitThread != True:
-            # receive video frame from rover
-            frame = transfer.receiveFrames()
-            # show the received video frame
+    while exitThread != True:
+        # receive video frame from rover
+        frame = transfer.receiveFrames()
+        try:
+            # show the rover video stream
             cv2.imshow('client [receiver]', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-    except KeyboardInterrupt:
-        exitThread = True
+            cv2.waitKey(1)
+        except cv2.error:
+            pass
+        except KeyboardInterrupt:
+            # force close
+            exitThread = True
 
-''' send commands from controller to rover '''
-def sendCommands(host, port, protocol):
+''' attempt to connect command stream with rover '''
+def connectTCP(sock):
     global exitThread
     conn = None
     addr = None
+    connected = False
+    # try to connect until thread exits
+    while exitThread != True and connected == False:
+        connected = True
+        try:
+            conn, addr = sock.accept() # wait for connection request
+        # try for 1 second, then restart
+        # allows us to exit process if needed
+        except socket.timeout:
+            print('trying')
+            connected = False
+    return (conn, addr)
+            
+''' send commands from controller to rover '''
+def sendCommands(host, port, protocol):
+    global exitThread
     # setup tcp socket to send commands to control rover
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.settimeout(1)
     # bind socket to controller
     sock.bind((host, port))
     # listen for potential connections
     sock.listen()
     # wait for the rover to connect
-    print(1)
-    conn, addr = sock.accept()
-    print(2)
+    conn, addr = connectTCP(sock)
     # xbox controller
     xbox = XboxController.XboxController()
     # read inputs from xbox one controller
@@ -82,35 +100,30 @@ def sendCommands(host, port, protocol):
             # serialize data
             dataToSend = pickle.dumps(command)
         except (inputs.UnpluggedError, OSError):
+            print('xbox controller unplugged')
             # reload inputs
             importlib.reload(inputs)
-            print('xbox controller unplugged')
+            # controller disconnected, stop the motors
             dataToSend = pickle.dumps([1500,1500])
-            # send data to rover
         try:
             conn.send(dataToSend)
-            print('sent')
         except (ConnectionResetError, OSError):
-            print('connection to rover lost')
+            print('lost connection to rover, reconnecting...')
             # listen for potential connections
             sock.listen()
-            # wait for the rover to connect
-            conn, addr = sock.accept()
-
-            
-        #except OSError:
-            #print('oserror')
-            #pass
+            conn, addr = connectTCP(sock)
         except KeyboardInterrupt:
             conn.close()
     # close the socket
-    conn.close()
+    if conn is not None:
+        conn.close()
 
 ''' causes all processes to end if 'q' is inputted into terminal '''
 def power():
     global exitThread
     while exitThread != True:
-        c = input()
+        c = input() # get input from user
+        # exit all threads
         if c == 'q':
             exitThread = True
 
