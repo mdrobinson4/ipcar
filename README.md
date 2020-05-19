@@ -1,5 +1,4 @@
-# Socket (v1)
-
+# Socket Car V1
 Allows user to control rover through sockets
 
 ## Overview:
