@@ -11,9 +11,6 @@ import warnings
 import RPi.GPIO as GPIO
 
 exitThread = None
-motorCommand = [0, 0]
-
-
 
 def main():
     # rover and controller ip address
@@ -78,7 +75,6 @@ def connectTCP(sock, host, port):
     connected = False
     # connect to the controller
     while connected == False and exitThread != True:
-        #print('here')
         connected = True
         try:
             sock.connect((host, port))
@@ -108,7 +104,6 @@ def getCommands(host, port, protocol):
         try:
             # decode data sent from controller
             motorCommand = pickle.loads(data)
-            print(motorCommand)
             # send command to the left motor
             m0 = motor[0].drive(motorCommand[0])
             # send command to the right motor

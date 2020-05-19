@@ -70,7 +70,6 @@ def connectTCP(sock):
         # try for 1 second, then restart
         # allows us to exit process if needed
         except socket.timeout:
-            print('trying')
             connected = False
     return (conn, addr)
             
@@ -96,11 +95,9 @@ def sendCommands(host, port, protocol):
             (l,r) = xbox.readController()
             # command to send to rover
             command = [l,r]
-            print(command)
             # serialize data
             dataToSend = pickle.dumps(command)
         except (inputs.UnpluggedError, OSError):
-            print('xbox controller unplugged')
             # reload inputs
             importlib.reload(inputs)
             # controller disconnected, stop the motors
