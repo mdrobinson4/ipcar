@@ -1,12 +1,13 @@
 # Socket (v1)
 
-Allows users to controll RC car over the internet
+Allows user to control rover through sockets
 
 ## Overview:
-### Server (Computer / Controller):
-- Sends commands to the car.
-- Receives video frames from a webcam mounted on the car.
+### controller (xbox one controller connected to laptop):
+- sends commands [tcp] to the car and receives video stream [udp] from the car
+- currently using an xbox one controller connected to my laptop to operate rover
 
-### Client (Car)
-- Receives commands from the server.
-- Sends video frames from a webcam mounted on the car to the server.
+### rover (raspberry pi driving motors)
+- mixed motor controls are received from the controller
+- streams video to the controller
+- sends video frames from a webcam mounted on the car to the server
