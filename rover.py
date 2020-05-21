@@ -14,7 +14,7 @@ exitThread = None
 
 def main():
     # rover and controller ip address
-    IP = {'rover': 'localhost', 'controller': 'localhost'}
+    IP = {'rover': '192.168.2.8', 'controller': '192.168.2.5'}
     # frame and command transfer port numbers
     PORT = {'frame': 1050, 'command': 1051}
     # receive video from webcam

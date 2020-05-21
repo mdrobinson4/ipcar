@@ -12,7 +12,7 @@ exitThread = None
 
 def main():
     # rover and controller ip address
-    IP = {'rover': 'localhost', 'controller': 'localhost'}
+    IP = {'rover': '192.168.2.8', 'controller': '192.168.2.5'}
     # frame and command transfer port numbers
     PORT = {'frame': 1050, 'command': 1051}
     createThreads(IP, PORT)
@@ -39,7 +39,7 @@ def getFrames(host, port, protocol):
     global exitThread
     # setup udp socket to receive video from rover
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(1)
+    sock.settimeout(0.001)
     sock.bind((host, port))
     # create transfer class to receive video
     transfer = DataTransfer.DataTransfer(sock, None, None, 'udp')
