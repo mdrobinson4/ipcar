@@ -14,7 +14,7 @@ exitThread = None
 
 def main():
     # rover and controller ip address
-    IP = {'rover': 'localhost', 'controller': 'localhost'}
+    IP = {'rover': '192.168.2.8', 'controller': '192.168.2.5'}
     # frame and command transfer port numbers
     PORT = {'frame': 1050, 'command': 1051}
     # receive video from webcam
@@ -99,7 +99,7 @@ def getCommands(host, port, protocol):
         
     while exitThread != True:
         # receive command from controller
-        data = sock.recv(26)
+        data = sock.recv(34)
         try:
             # decode data sent from controller
             motorCommand = pickle.loads(data)
@@ -107,7 +107,7 @@ def getCommands(host, port, protocol):
             m0 = motor[0].drive(motorCommand[0])
             # send command to the right motor
             m1 = motor[1].drive(motorCommand[1])
-        except EOFError:
+        except (EOFError,pickle.UnpicklingError):
             print('lost controller connection')
             # set motors to idle
             motor[0].stop()
