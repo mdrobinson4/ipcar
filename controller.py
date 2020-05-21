@@ -23,7 +23,7 @@ def createThreads(IP, PORT):
     # start receiving video from the rover
     frameThread = threading.Thread(target=getFrames, args=(IP['controller'], PORT['frame'], 'udp',))
     # start sending commands to the rover
-    commandThread = threading.Thread(target=sendCommands, args=(IP['controller'], PORT['command'], 'tcp',))
+    commandThread = threading.Thread(target=sendCommands, args=(IP, PORT, 'tcp',))
     powerThread = threading.Thread(target=power, args=())
     # start threads
     powerThread.start()
@@ -72,20 +72,12 @@ def connectTCP(sock):
         except socket.timeout:
             connected = False
     return (conn, addr)
-            
+
 ''' send commands from controller to rover '''
-def sendCommands(host, port, protocol):
+def sendCommands(IP, PORT, protocol):
     global exitThread
     # setup tcp socket to send commands to control rover
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.settimeout(1)
-    # bind socket to controller
-    sock.bind((host, port))
-    # listen for potential connections
-    sock.listen()
-    # wait for the rover to connect
-    conn, addr = connectTCP(sock)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # xbox controller
     xbox = XboxController.XboxController()
     # read inputs from xbox one controller
@@ -103,17 +95,10 @@ def sendCommands(host, port, protocol):
             # controller disconnected, stop the motors
             dataToSend = pickle.dumps([1500,1500])
         try:
-            conn.send(dataToSend)
+            sock.sendto(dataToSend, (IP['rover'], PORT['command']))
         except (ConnectionResetError, OSError):
             print('lost connection to rover, reconnecting...')
             # listen for potential connections
-            sock.listen()
-            conn, addr = connectTCP(sock)
-        except KeyboardInterrupt:
-            conn.close()
-    # close the socket
-    if conn is not None:
-        conn.close()
 
 ''' causes all processes to end if 'q' is inputted into terminal '''
 def power():

@@ -14,7 +14,7 @@ exitThread = None
 
 def main():
     # rover and controller ip address
-    IP = {'rover': '192.168.2.8', 'controller': '192.168.2.5'}
+    IP = {'rover': 'localhost', 'controller': 'localhost'}
     # frame and command transfer port numbers
     PORT = {'frame': 1050, 'command': 1051}
     # receive video from webcam
@@ -61,7 +61,7 @@ def sendFrames(host, port, cap, protocol):
                 print('broken pipe')
             except ConnectionAbortedError:
                 print('connection aborted')
-        
+
     # stop all threads and clean everything up
     exitThread = True
     sock.close()
@@ -93,34 +93,31 @@ def getCommands(host, port, protocol):
     motor[0] = MotorControl.Motor(17)
     motor[1] = MotorControl.Motor(18)
     # setup tcp socket to receive commands from
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # connect to the controller
-    sock = connectTCP(sock, host, port)
-        
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(0.01)
+    sock.bind((host, port))
+
     while exitThread != True:
-        # receive command from controller
-        data = sock.recv(34)
         try:
+            # receive command from controller
+            data, address = sock.recvfrom(34)
             # decode data sent from controller
             motorCommand = pickle.loads(data)
             # send command to the left motor
             m0 = motor[0].drive(motorCommand[0])
             # send command to the right motor
             m1 = motor[1].drive(motorCommand[1])
-        except (EOFError,pickle.UnpicklingError):
+        except socket.timeout:
+            motor[0].stop()
+            motor[1].stop()
+        except (EOFError, pickle.UnpicklingError):
             print('lost controller connection')
             # set motors to idle
             motor[0].stop()
             motor[1].stop()
-            # attempt to reconnect to controller
-            sock.close()
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock = connectTCP(sock, host, port)
-            pass
     # stop both motors
     motor[0].stop()
     motor[1].stop()
-    
     if sock:
         sock.close()
 
@@ -131,6 +128,6 @@ def power():
         c = input()
         if c == 'q':
             exitThread = True
-            
+
 if __name__ == '__main__':
     main()
