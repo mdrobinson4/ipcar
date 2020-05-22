@@ -12,7 +12,7 @@ exitThread = None
 
 def main():
     # rover and controller ip address
-    IP = {'rover': '192.168.2.8', 'controller': '192.168.2.5'}
+    IP = {'rover': 'localhost', 'controller': 'localhost'}
     # frame and command transfer port numbers
     PORT = {'frame': 1050, 'command': 1051}
     createThreads(IP, PORT)

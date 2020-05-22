@@ -9,7 +9,7 @@ class DataTransfer:
         # initialize variables
         self.protocol = protocol
         self.socket = socket
-        self.scale = 1/2
+        self.scale = 1
         self.transferLimit = 65507 # udp limit
         self.client = (clientAddr, port)
 
@@ -32,7 +32,7 @@ class DataTransfer:
             bytesSent += bytesToSend
             # update the amount of data left
             bytesRem -= bytesToSend
-    
+
     ''' get video stream from the rover '''
     def receiveFrames(self):
         dataLen = None
@@ -77,7 +77,7 @@ class DataTransfer:
         scaled = (int(self.scale*width), int(self.scale*height))
         resized = cv2.resize(bwFrame, scaled)
         return resized
-    
+
     ''' encode frame '''
     def compressData(self, resized):
         f = BytesIO()
@@ -87,4 +87,3 @@ class DataTransfer:
         dataSize = "{0}:".format(len(f.getvalue()))
         compressedFrame = dataSize.encode() + compressedFrame
         return compressedFrame
-
